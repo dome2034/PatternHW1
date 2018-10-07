@@ -2,7 +2,10 @@ let fs = require('fs')
 const math = require('mathjs')
 
 let input = fs.readFileSync('TWOCLASS.dat', 'utf8')
+const fNum = 2
 const percentValidate = 10
+const pw1 = 1
+const pw2 = 1
 
 const fetchData = Promise.resolve(
     input.trim().split('\r\n').map(x => x.split('\t'))
@@ -34,29 +37,33 @@ const setUpTrainData = (percentValidate, data) => {
     return trainDatas
 }
 
-const separateClass = (dataSource, classLabel) => {
+const separateClass = (dataSource, classLabel,f) => {
     return dataSource.filter((data) => { return data[4] === classLabel }).map((val) => {
-        return val.slice(0, -1)
+        return val.slice(0, f)
     })
 }
 
 const average = datas => {
-    return datas.reduce(([p1, p2, p3, p4], [c1, c2, c3, c4]) => {
-        return [parseFloat(p1) + parseFloat(c1), parseFloat(p2) + parseFloat(c2), parseFloat(p3) + parseFloat(c3), parseFloat(p4) + parseFloat(c4)]
-    }, [0, 0, 0, 0]).map((sum) => {
+    let initP = []
+    initP = datas[0].map(a => 0)
+    return datas.reduce((p, c) => {
+        let res = []
+            for(let i =0 ; i<p.length;i++){
+                res.push(parseFloat(p[i]) + parseFloat(c[i]))
+            }
+        return res
+    }, initP).map((sum) => {
         return sum / datas.length
-    })
-}
-
-const multiplyMatrixWithNumber = (datas, num) => {
-    return datas.map((data) => {
-        return [parseFloat(data[0]) * num, parseFloat(data[1]) * num, parseFloat(data[2]) * num, parseFloat(data[3]) * num]
     })
 }
 
 const xMinusMean = (datas, means) => {
     return datas.map((data) => {
-        return [parseFloat(data[0]) - parseFloat(means[0]), parseFloat(data[1]) - parseFloat(means[1]), parseFloat(data[2]) - parseFloat(means[2]), parseFloat(data[3]) - parseFloat(means[3])]
+        let res = []
+        for(let i =0 ; i<data.length;i++){
+            res.push(parseFloat(data[i]) - parseFloat(means[i]))
+        }
+        return res
     })
 }
 
@@ -71,18 +78,16 @@ const main = async () => {
     })
     const testDatas = setUpTestData(percentValidate, sourceData)
     const trainDatas = setUpTrainData(percentValidate, sourceData)
-    let result = []
     for (i = 0; i <= 9; i++) {
         let testData = testDatas[i].map((val) => {
-            return val.slice(0, -1)
+            return val.slice(0, fNum)
         })
-
         let testClass = testDatas[i].map((val) => {
-            return val.slice(4, 5)
+            return val.slice(-1)
         })
 
-        let trainClass1 = separateClass(trainDatas[i], '1')
-        let trainClass2 = separateClass(trainDatas[i], '2')
+        let trainClass1 = separateClass(trainDatas[i], '1',fNum)
+        let trainClass2 = separateClass(trainDatas[i], '2',fNum)
 
         let meanClass1 = average(trainClass1)
         let meanClass2 = average(trainClass2)
@@ -99,27 +104,35 @@ const main = async () => {
             let classChoose
             let fx1 = fx(2, cov1, testXMinusMean1[j])
             let fx2 = fx(2, cov2, testXMinusMean2[j])
-            if (fx1 === fx2) { classChoose = Math.floor((Math.random() * 2) + 1) }
-            else if (fx1 > fx2) { classChoose = 1 }
-            else if (fx1 < fx2) { classChoose = 2 }
+            if (fx1 * pw1 === fx2 * pw2) { classChoose = Math.floor((Math.random() * 2) + 1) }
+            else if (fx1 * pw1 > fx2 * pw2) { classChoose = 1 }
+            else if (fx1 * pw1 < fx2 * pw2) { classChoose = 2 }
 
             if (parseInt(testClass[j]) === 1 && classChoose === 1) { a = a + 1 }
             else if (parseInt(testClass[j]) === 1 && classChoose === 2) { b = b + 1 }
             else if (parseInt(testClass[j]) === 2 && classChoose === 1) { c = c + 1 }
             else if (parseInt(testClass[j]) === 2 && classChoose === 2) { d = d + 1 }
         }
-        console.log(`----------Test ${i+1} --------------`)
-        console.log(`|`, a, b, `|`)
-        console.log(`|`, c, d, `|`)
+        console.log(`---------- Test ${i + 1} --------------`)
+        let smeanClass1 = meanClass1.reduce((res,mean) => res +' '+ mean,'')
+        let smeanClass2 = meanClass2.reduce((res,mean) => res +' '+ mean,'')
+        console.log(`Mean class 1 : ${smeanClass1}`)
+        console.log(`Mean class 2 : ${smeanClass2}`)
+        console.log(`\nCovariance matrices`)
+
+        cov1.forEach((row) => {
+            let cov = row.reduce((res,r) => res +' '+ r,'')
+            console.log(`| ${cov} |`)
+        })
+        console.log(`\nConfusion matrix`)
+        console.log(`| ${a} ${b} |`)
+        console.log(`| ${c} ${d} |`)
         let correct = 100 * (a + d) / (a + b + c + d)
         let error = 100 - correct
-        console.log(`correct ${correct} %`)
+        console.log(`\ncorrect ${correct} %`)
         console.log(`error ${error} %`)
-        console.log(`-------------------------------\n`)
+        console.log(`--------------------------------\n`)
     }
-
-    // console.log(fx(2, cov1, xMinusMean1[0]))
-    // console.log(fx(2, cov2, xMinusMean2[0]))
 }
 
 main()
