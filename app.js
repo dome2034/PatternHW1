@@ -2,7 +2,7 @@ let fs = require('fs')
 const math = require('mathjs')
 
 let input = fs.readFileSync('TWOCLASS.dat', 'utf8')
-const fNum = 2
+const fNum = 4 //Change number of features here
 const percentValidate = 10
 const pw1 = 1
 const pw2 = 1
@@ -113,11 +113,11 @@ const main = async () => {
             else if (parseInt(testClass[j]) === 2 && classChoose === 1) { c = c + 1 }
             else if (parseInt(testClass[j]) === 2 && classChoose === 2) { d = d + 1 }
         }
-        console.log(`---------- Test ${i + 1} --------------`)
+        console.log(`---------- Validation ${i + 1} --------------`)
         let smeanClass1 = meanClass1.reduce((res,mean) => res +' '+ mean,'')
         let smeanClass2 = meanClass2.reduce((res,mean) => res +' '+ mean,'')
-        console.log(`Mean class 1 : ${smeanClass1}`)
-        console.log(`Mean class 2 : ${smeanClass2}`)
+        console.log(`Mean class 1 : | ${smeanClass1} |`)
+        console.log(`Mean class 2 : | ${smeanClass2} |`)
         console.log(`\nCovariance matrices`)
 
         cov1.forEach((row) => {
